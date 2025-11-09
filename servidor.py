@@ -4,6 +4,8 @@ import threading
 
 #Biblioteca que contendrá a los {"usuario" : usuario_socket} que se conecten al servidor y que no pueden ser usuados por nuevos clientes s
 usuarios_activos = []
+#Para poder modificar variables globales y evitar condiciones de carrera, usamos el lock 
+lock = threading.Lock()
 
 #IMPORTANTE RECORDAR!!!! EL puerto se pide por linea de comandos, recordar cambiar !!!
 print("Arrancando servidor")
