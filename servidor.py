@@ -2,11 +2,23 @@ import socket
 import threading
 
 
+#Biblioteca que contendrá a los {"usuario" : usuario_socket} que se conecten al servidor y que no pueden ser usuados por nuevos clientes s
+usuarios_activos = []
 
+#IMPORTANTE RECORDAR!!!! EL puerto se pide por linea de comandos, recordar cambiar !!!
 print("Arrancando servidor")
 servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 servidor.bind((socket.gethostname(), 5555))
 servidor.listen()
+
+#Esta función es para comprobar si el usuario que ha escogido el cliente está disponible 
+def comprobar_disponibilidad(u):
+    if u not in usuarios_activos:
+        usuarios_activos.append(u)
+        return True
+    return False 
+
+
 
 
 def comunicacion (cliente, addr):
@@ -19,6 +31,10 @@ def comunicacion (cliente, addr):
                 print("Cerrando conexión")
                 cliente.close()
                 break 
+            u = usuario.decode() #Aquí extraemos el nombre de usuario que ha elegido el cliente
+            
+
+
 
 
 
