@@ -1,6 +1,7 @@
 import socket
 import threading
 import pickle
+import os
 import json
 from .datos_server import *
 
@@ -15,6 +16,23 @@ print("\nArrancando servidor...")
 servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 servidor.bind((socket.gethostname(), 5555))
 servidor.listen()
+
+
+# Esta función, creará un nuevo directorio para cada usuario nuevo que se conecte
+def crear_carpeta(nombre_usuario):
+    ruta = os.path.join("datos_server", nombre_usuario)
+
+    try:
+        os.mkdir(ruta)
+        print(f"Carpeta creada: {ruta}")
+    except FileExistsError:
+        print(f"La carpeta ya existe: {ruta}")
+
+    return ruta
+
+
+def leer_carpeta():
+    pass
 
 
 def comunicacion (cliente, addr):
@@ -35,21 +53,28 @@ def comunicacion (cliente, addr):
                 lock.release()
             cliente.sendall(data)
 
-            # -- Aquí se recibiría el nombre de usuario de los clientes que se conectan
-            usuario = cliente.recv(1024) 
-            if not usuario:
-                print(f"Cliente desconectado: {addr}")
-                cliente.close()
-                break 
-            u = usuario.decode() #Aquí extraemos el nombre de usuario que ha elegido el cliente
-            try:
-                lock.acquire()
-                usuarios_activos.append(u)
-            finally:
-                lock.release()
+            # -- Nos "comunicamos" con el cliente por medio de comandos, dependiendo de lo que nos diga, vamos haciendo x tareas en el servidor
 
-        
+            comando = cliente.recv(1024).decode()
 
+            # ------------------ INICIO Y CONEXIÓN -----------------------
+            if comando == "REGISTRO":
+                usuario = cliente.recv(1024).decode() #Aquí extraemos el nombre de usuario que ha elegido el cliente    
+                try:
+                    lock.acquire()
+                    if usuario not in usuarios_activos:
+                        usuarios_activos.append(usuario)
+                        crear_carpeta(usuario)
+                        respuesta = 'OK'
+                    
+                    else:
+                        respuesta = "DENEGADO"
+                finally:
+                    lock.release()
+                cliente.sendall(respuesta.encode())
+
+    
+            # ------------------ SINCRONIZACIÓN INICIAL Y DESCARGA ---------------------------
             # -- Control de usuarios activos
             print(usuarios_activos)
 

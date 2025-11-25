@@ -21,14 +21,23 @@ while True:
     # Bucle para comprobar que no se repita el mismo nombre de usuario
     while True: 
         usuario = input("> ")
+
         if usuario not in usuarios_bloqueados:
-            cliente.sendall(usuario.encode())
+            comando = "REGISTRO"
+            mensaje = comando + usuario
+            cliente.sendall(mensaje.encode())
             break
         else:
             print("El nombre de usuario no está disponible. Inténtelo de nuevo")
+    respuesta = cliente.recv(1024)
+    if respuesta.decode() == "OK":
+        print("Usuario conectado")
+    else: 
+        print("Acceso denegado por el servidor")
+
 
     # -- SINCRONIZACIÓN INICIAL Y DESCARGA
-    
+    print("\nDescargando biblioteca...")
     # -- TRABAJO LOCAL
 
     # -- CIERRE Y SINCRONIZACIÓN FINAL
