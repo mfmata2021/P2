@@ -17,14 +17,14 @@ while True:
     print("\n-- Bienvenido a la biblioteca de música --\n")
     print("Antes de iniciar, introduzca un nombre de usuario")
 
-    # -- INICIO Y CONEXIÓN
+# ------------ INICIO Y CONEXIÓN -------------------------------------
     # Bucle para comprobar que no se repita el mismo nombre de usuario
     while True: 
         usuario = input("> ")
 
         if usuario not in usuarios_bloqueados:
             comando = "REGISTRO"
-            mensaje = comando + usuario
+            mensaje = comando + ":" + usuario
             cliente.sendall(mensaje.encode())
             break
         else:
@@ -32,12 +32,16 @@ while True:
     respuesta = cliente.recv(1024)
     if respuesta.decode() == "OK":
         print("Usuario conectado")
+
+# ---------- SINCRONIZACIÓN INICIAL Y DESCARGA --------------------------
+        comando = "SYNC_INICIO"
+        cliente.sendall(comando.encode()) #Si el servidor responde que OK, el cliente solicita la descarga de su biblioteca
+        print("\nDescargando biblioteca...\n")
     else: 
         print("Acceso denegado por el servidor")
 
 
-    # -- SINCRONIZACIÓN INICIAL Y DESCARGA
-    print("\nDescargando biblioteca...")
+
     # -- TRABAJO LOCAL
 
     # -- CIERRE Y SINCRONIZACIÓN FINAL

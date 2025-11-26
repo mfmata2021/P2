@@ -4,6 +4,7 @@ import pickle
 import os
 import json
 from .datos_server import *
+from herramientas_servidor import *
 
 
 # Biblioteca que contendrá a los {"usuario" : usuario_socket} que se conecten al servidor y que no pueden ser usuados por nuevos clientes s
@@ -16,23 +17,6 @@ print("\nArrancando servidor...")
 servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 servidor.bind((socket.gethostname(), 5555))
 servidor.listen()
-
-
-# Esta función, creará un nuevo directorio para cada usuario nuevo que se conecte
-def crear_carpeta(nombre_usuario):
-    ruta = os.path.join("datos_server", nombre_usuario)
-
-    try:
-        os.mkdir(ruta)
-        print(f"Carpeta creada: {ruta}")
-    except FileExistsError:
-        print(f"La carpeta ya existe: {ruta}")
-
-    return ruta
-
-
-def leer_carpeta():
-    pass
 
 
 def comunicacion (cliente, addr):
@@ -55,11 +39,11 @@ def comunicacion (cliente, addr):
 
             # -- Nos "comunicamos" con el cliente por medio de comandos, dependiendo de lo que nos diga, vamos haciendo x tareas en el servidor
 
-            comando = cliente.recv(1024).decode()
+            mensaje = cliente.recv(1024).decode() #Aquí llegaría el comando 
+            comando = mensaje.split(":")
 
-            # ------------------ INICIO Y CONEXIÓN -----------------------
-            if comando == "REGISTRO":
-                usuario = cliente.recv(1024).decode() #Aquí extraemos el nombre de usuario que ha elegido el cliente    
+            if comando[0] == "REGISTRO":
+                usuario = comando[1]
                 try:
                     lock.acquire()
                     if usuario not in usuarios_activos:
@@ -75,8 +59,8 @@ def comunicacion (cliente, addr):
 
     
             # ------------------ SINCRONIZACIÓN INICIAL Y DESCARGA ---------------------------
-            # -- Control de usuarios activos
-            print(usuarios_activos)
+            elif comando[0] == "SYNC_INICIO":
+                pass
 
 
 # Esperamos a clientes infinitamente a menos que se interrumpa por teclado
