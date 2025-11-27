@@ -22,47 +22,68 @@ servidor.listen()
 def comunicacion (cliente, addr):
 
     global usuarios_activos
+    usuario = None
 
     if cliente:
         print(f"Cliente conectado en: {addr}")
+        # -- Envío al cliente la lista de usuarios activos en el servidor
+        lock.acquire()
+        data = pickle.dumps(usuarios_activos)
+        lock.release()
+        cliente.sendall(data)
 
-        while True:
-            # -- Envío al cliente la lista de usuarios activos en el servidor
 
-            # IMPORTANTE:Si un hilo puede modificar la lista, entonces todas las lecturas deben protegerse también
-            try: 
-                lock.acquire()
-                data = pickle.dumps(usuarios_activos)
-            finally:
-                lock.release()
-            cliente.sendall(data)
+        try:
+            while True:
 
-            # -- Nos "comunicamos" con el cliente por medio de comandos, dependiendo de lo que nos diga, vamos haciendo x tareas en el servidor
+                # IMPORTANTE:Si un hilo puede modificar la lista, entonces todas las lecturas deben protegerse también
 
-            mensaje = cliente.recv(1024).decode() #Aquí llegaría el comando 
-            comando = mensaje.split(":")
+                # -- Nos "comunicamos" con el cliente por medio de comandos, dependiendo de lo que nos diga, vamos haciendo x tareas en el servidor
 
-            if comando[0] == "REGISTRO":
-                usuario = comando[1]
-                try:
+                mensaje = cliente.recv(1024) #Aquí llegaría el comando 
+                if not mensaje:
+                    break
+
+                comando = mensaje.decode().split(":")
+
+                if comando[0] == "REGISTRO":
+                    usuario = comando[1]
+
                     lock.acquire()
-                    if usuario not in usuarios_activos:
-                        usuarios_activos.append(usuario)
-                        crear_carpeta(usuario)
-                        respuesta = 'OK'
-                    
-                    else:
-                        respuesta = "DENEGADO"
-                finally:
-                    lock.release()
-                cliente.sendall(respuesta.encode())
+                    try:
+                        if usuario not in usuarios_activos:
+                            usuarios_activos.append(usuario)
+                            crear_carpeta(usuario)
+                            respuesta = 'OK'
 
-    
-            # ------------------ SINCRONIZACIÓN INICIAL Y DESCARGA ---------------------------
-            elif comando[0] == "SYNC_INICIO":
-                pass
+                        else:
+                            respuesta = "DENEGADO"
+                    finally:
+                        lock.release()
+                    cliente.sendall(respuesta.encode())
 
+                # ------------------ SINCRONIZACIÓN INICIAL Y DESCARGA ---------------------------
+                elif comando[0] == "SINCRONIZAR" and usuario:
 
+                    enviar_json(cliente, usuario)
+                    enviar_mp3(cliente, usuario)
+
+                elif comando[0] == "SUBIR" and usuario:
+
+                    recibir_json(cliente, usuario)
+                    recibir_mp3(cliente, usuario)
+
+                elif comando[0] == "SALIR":
+                    break  # Salir del bucle del hilo
+
+        finally:
+            if usuario:
+                lock.acquire()
+                if usuario in usuarios_activos:
+                    usuarios_activos.remove(usuario)
+                lock.release()
+            cliente.close()
+            print(f"Usuario {usuario} liberado y conexión cerrada")
 # Esperamos a clientes infinitamente a menos que se interrumpa por teclado
 try:
     while True: 
